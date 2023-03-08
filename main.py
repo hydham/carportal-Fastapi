@@ -1,9 +1,14 @@
-from fastapi import FastAPI, Query, Path, HTTPException, status, Body
+from fastapi import FastAPI, Query, Path, HTTPException, status, Body, Request
+from fastapi.responses import HTMLResponse
 from fastapi.encoders import jsonable_encoder
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 
 from database import cars
+
+templates = Jinja2Templates(directory="templates")
 
 class Car(BaseModel):
     make: Optional[str]
@@ -16,9 +21,12 @@ class Car(BaseModel):
 
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"Welcome to": "your first API in FastAPI!"}
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class= HTMLResponse)
+def root(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request, "text": "Welcome to your first API in FastAPI"})
+    
 
 @app.get("/cars", response_model=List[Dict[str, Car]])
 def get_cars(number: Optional[str] = Query("10",max_length=3)):
